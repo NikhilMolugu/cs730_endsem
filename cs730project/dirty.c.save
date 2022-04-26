@@ -1,0 +1,20 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+#define PTE_SIZE 8
+
+FILE *f;
+int i;
+
+int main(){
+	char * path = "/proc/self/pagemap";
+	f = fopen(path, "rb");
+	fseek(f, -1, SEEK_END);
+	while(1){
+		char c = fgetc(f);
+	if(c || c != EOF)
+			printf("%ld : 0x%X\n", ftell(f), c);
+		//
+	}
+	return 0;
+}
