@@ -50,17 +50,17 @@ atomic_t  device_opened;
 static struct class *pgdv_class;
 struct device *pgdv_device;
 
-
-extern void(*cow_dirty_track)(struct mm_struct *mm);
-void cow_track(struct mm_struct *mm);
-
+/*
+extern void(*cow_dirty_track)(struct mm_struct *mm,unsigned long address);
+void cow_track(struct mm_struct *mm,unsigned long address);
+*/
 
 
 static int pgdv_open(struct inode *inode, struct file *file)
 {
         atomic_inc(&device_opened);
         try_module_get(THIS_MODULE);
-	cow_dirty_track=&cow_track;
+//	cow_dirty_track=&cow_track;
         printk(KERN_INFO "Device opened successfully\n");
         return 0;
 }
@@ -69,7 +69,7 @@ static int pgdv_release(struct inode *inode, struct file *file)
 {
         atomic_dec(&device_opened);
         module_put(THIS_MODULE);
-	cow_dirty_track = NULL;
+//	cow_dirty_track = NULL;
         printk(KERN_INFO "Device closed successfully\n");
 
         return 0;
@@ -242,15 +242,6 @@ void clean_dirty_ptes(struct mm_struct *mm, int clear)
 					
 					}
 					
-					if(clear == 3) //for page fault handler to revert read bit
-					{
-					
-					*pte = pte_set_flags(*pte, _PAGE_RW);
-
-                                        ccode = kernel_write(dirty_track_file, (void *)&count, 4, &pos);
-
-					pos+=4;					
-					}
 				
 					pte_unmap_unlock(page_table, ptl);
                                         }
@@ -262,15 +253,71 @@ void clean_dirty_ptes(struct mm_struct *mm, int clear)
 }
 
 
-void cow_track(struct mm_struct *mm) {
+static pte_t* get_pte(unsigned long address, unsigned long *addr_vma)
+{
+        pgd_t *pgd;
+        p4d_t *p4d;
+        pud_t *pud;
+        pmd_t *pmd;
+        pte_t *ptep;
+        struct mm_struct *mm = current->mm;
+        struct vm_area_struct *vma = find_vma(mm, address);
+        if(!vma){
+                 printk(KERN_INFO "No vma yet\n");
+                 goto nul_ret;
+        }
+       
+        *addr_vma = (unsigned long) vma;
+
+        pgd = pgd_offset(mm, address);
+        if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd)))
+                goto nul_ret;
+        printk(KERN_INFO "pgd(va) [%lx] pgd (pa) [%lx] *pgd [%lx]\n", (unsigned long)pgd, __pa(pgd), pgd->pgd); 
+        p4d = p4d_offset(pgd, address);
+        if (p4d_none(*p4d))
+                goto nul_ret;
+        if (unlikely(p4d_bad(*p4d)))
+                goto nul_ret;
+        pud = pud_offset(p4d, address);
+        if (pud_none(*pud))
+                goto nul_ret;
+        if (unlikely(pud_bad(*pud)))
+                goto nul_ret;
+        printk(KERN_INFO "pud(va) [%lx] pud (pa) [%lx] *pud [%lx]\n", (unsigned long)pud, __pa(pud), pud->pud); 
+
+        pmd = pmd_offset(pud, address);
+        if (pmd_none(*pmd))
+                goto nul_ret;
+        if (unlikely(pmd_trans_huge(*pmd))){
+                printk(KERN_INFO "I am huge\n");
+                goto nul_ret;
+        }
+        printk(KERN_INFO "pmd(va) [%lx] pmd (pa) [%lx] *pmd [%lx]\n", (unsigned long)pmd, __pa(pmd), pmd->pmd); 
+        ptep = pte_offset_map(pmd, address);
+        if(!ptep){
+                printk(KERN_INFO "pte_p is null\n\n");
+                goto nul_ret;
+        }
+        printk(KERN_INFO "pte(va) [%lx] pte (pa) [%lx] *pte [%lx]\n", (unsigned long)ptep, __pa(ptep), ptep->pte); 
+        return ptep;
+
+        nul_ret:
+    printk(KERN_INFO "Address could not be translated\n");
+               return NULL;
+}
+/*
+void cow_track(struct mm_struct *mm, unsigned long address) {
+
+
+	pte_t * sd;
+	unsigned long vma_addr;
+	sd = get_pte(address, &vma_addr);
+//	clean_dirty_ptes(mm,3);
 
 	
-	clean_dirty_ptes(mm,3);
-
-
 
 }
-
+*/
 
 
 static long ioctl_redirect(struct file *f, unsigned int cmd, unsigned long arg) {

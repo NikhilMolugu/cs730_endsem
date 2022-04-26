@@ -1,1 +1,1 @@
-cmd_/home/nikhila/cs730project/driver/driver.ko := ld -r -m elf_x86_64  --build-id=sha1  -T scripts/module.lds -o /home/nikhila/cs730project/driver/driver.ko /home/nikhila/cs730project/driver/driver.o /home/nikhila/cs730project/driver/driver.mod.o;  true
+cmd_/home/nikhila/zz/cs730project/driver/driver.ko := ld -r  -m elf_x86_64  --build-id=sha1  -T scripts/module.lds -o /home/nikhila/zz/cs730project/driver/driver.ko /home/nikhila/zz/cs730project/driver/driver.o /home/nikhila/zz/cs730project/driver/driver.mod.o;  true

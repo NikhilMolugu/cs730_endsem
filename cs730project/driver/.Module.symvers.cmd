@@ -1,1 +1,1 @@
-cmd_/home/nikhila/cs730project/driver/Module.symvers := sed 's/ko$$/o/' /home/nikhila/cs730project/driver/modules.order | scripts/mod/modpost  -a   -o /home/nikhila/cs730project/driver/Module.symvers -e -i Module.symvers   -T -
+cmd_/home/nikhila/zz/cs730project/driver/Module.symvers := sed 's/\.ko$$/\.o/' /home/nikhila/zz/cs730project/driver/modules.order | scripts/mod/modpost -m -a  -o /home/nikhila/zz/cs730project/driver/Module.symvers -e -i Module.symvers   -T -
